@@ -41,7 +41,7 @@ bool STU::confirm(int us, byte level)
     return ok;
 }
 
-byte STU::readRHT(MT *rh, MT *t)
+byte STU::readRHT(byte *rh, byte *t)
 {
     byte bits[BITS];
 

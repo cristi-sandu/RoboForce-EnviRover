@@ -6,17 +6,17 @@
 #include <LCD_I2C.h>
 #include <MQ135.h>
 #include <RtcDS1302.h>
-#include <SimpleDHT.h>
 #include <SD.h>
 #include <ThreeWire.h>
 
 #include "MOTOR.h"
+#include "STU.h"
 
 #define BAUD_RATE 9600
 #define AER_PIN A0
 #define UV_PIN A1
 #define CS_PIN 2
-#define DHT_PIN 3
+#define STU_PIN 3
 #define MOTOR_11 4
 #define MOTOR_12 5
 #define MOTOR_21 6
@@ -30,7 +30,7 @@
 MOTOR motor = MOTOR(MOTOR_11, MOTOR_12, MOTOR_21, MOTOR_22);
 MQ135 sensorAer = MQ135(AER_PIN);
 BMP180I2C sensorPresiune = BMP180I2C(SNZ_PRESIUNE);
-SimpleDHT11 dht11;
+STU stu = STU(STU_PIN);
 String btVal;
 LCD_I2C lcd(0x27, 16, 2);
 GUVAS12SD uv(UV_PIN);
@@ -41,9 +41,7 @@ File cardSd;
 void initPresiune();
 void afisareValoriSerial(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
 void afisareValoriLCD(byte temperetura, byte umiditate, float co2, float presiune, float uvIndex);
-void printDate(RtcDateTime now);
 void printTime(RtcDateTime now);
-void printDateLcd(RtcDateTime now);
 void printTimeLcd(RtcDateTime now);
 void afisareValoriCard(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
 void functionare();
@@ -56,6 +54,7 @@ void setup()
   motor.setup();
   lcd.begin();
   lcd.backlight();
+  stu.begin();
 
   if (!Serial || !SD.begin(CS_PIN) || !sensorPresiune.begin())
   {
@@ -194,31 +193,58 @@ void afisareValoriSerial(byte umiditate, byte temperatura, float co2, float pres
   Serial.print(presiune);
   Serial.println(" Pa");
   Serial.println();
+
   delay(PAUZA);
+}
+
+void printTimeLcd(RtcDateTime now)
+{
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("data: ");
+  lcd.print(now.Day());
+  lcd.print("/");
+  lcd.print(now.Month());
+  lcd.print("/");
+  lcd.print(now.Year());
+
+  lcd.setCursor(0, 1);
+  lcd.print("ora: ");
+  lcd.print(now.Hour());
+  lcd.print(":");
+  lcd.print(now.Minute());
+  lcd.print(":");
+  lcd.print(now.Second());
+
+  delay(PAUZA);
+  lcd.clear();
 }
 
 void afisareValoriLCD(byte umiditate, byte temperatura, float co2, float presiune, float uvIndex)
 {
   // umiditate
-  lcd.print("Umiditate : ");
+  lcd.clear();
+  lcd.print("umiditate : ");
   lcd.print(umiditate);
   // tempratura
   lcd.setCursor(0, 1);
-  lcd.print("Temperatura : ");
+  lcd.print("temperatura : ");
   lcd.print(temperatura);
   delay(PAUZA);
+
   // calitatea aerului
   lcd.clear();
-  lcd.print("Cal. aer : ");
+  lcd.print("cal. aer : ");
   lcd.print(co2);
   // presiune atmosferica
   lcd.setCursor(0, 1);
-  lcd.print("Presiune : ");
+  lcd.print("presiune : ");
   lcd.print(presiune);
   delay(PAUZA);
+
   // index UV
   lcd.clear();
-  lcd.print("Index UV : ");
+  lcd.print("index UV : ");
   lcd.print(uvIndex);
   // mesaj
   lcd.setCursor(0, 1);
@@ -227,26 +253,7 @@ void afisareValoriLCD(byte umiditate, byte temperatura, float co2, float presiun
   lcd.clear();
 }
 
-void printDateLcd(RtcDateTime now)
-{
-  lcd.print("data: ");
-  lcd.print(now.Day());
-  lcd.print("/");
-  lcd.print(now.Month());
-  lcd.print("/");
-  lcd.print(now.Year());
-}
-
-void printTimeLcd(RtcDateTime now)
-{
-  lcd.print("ora: ");
-  lcd.print(now.Hour());
-  lcd.print(":");
-  lcd.print(now.Minute());
-  lcd.print(":");
-  lcd.print(now.Second());
-}
-void printDate(RtcDateTime now)
+void printTime(RtcDateTime now)
 {
   cardSd.print("data : ");
   cardSd.print(now.Day());
@@ -255,10 +262,7 @@ void printDate(RtcDateTime now)
   cardSd.print("/");
   cardSd.println(now.Year());
   cardSd.print(" ");
-}
 
-void printTime(RtcDateTime now)
-{
   cardSd.print("ora : ");
   cardSd.print(now.Hour());
   cardSd.print(":");
@@ -302,11 +306,13 @@ void functionare()
 {
   byte temperatura = 0;
   byte umiditate = 0;
+  byte status = 0;
 
-  if (dht11.read(DHT_PIN, &temperatura, &umiditate, NULL))
+  status = stu.readRHT(&umiditate, &temperatura);
+  if (status)
   {
-    Serial.println("Eroare");
-    return;
+    Serial.print("Eroare : ");
+    Serial.println(status);
   }
 
   initPresiune();
@@ -322,7 +328,6 @@ void functionare()
   if (cardSd)
   {
     // data si ora
-    printDate(now);
     printTime(now);
 
     afisareValoriCard(umiditate, temperatura, co2, presiune, uvIndex);
@@ -330,18 +335,8 @@ void functionare()
 
     cardSd.close();
   }
-  lcd.clear();
 
-  lcd.setCursor(0, 0);
-  printDateLcd(now);
-
-  lcd.setCursor(0, 1);
   printTimeLcd(now);
-
-  delay(PAUZA);
-  lcd.clear();
-  lcd.setCursor(0, 0);
-
   afisareValoriLCD(umiditate, temperatura, co2, presiune, uvIndex);
   delay(PAUZA / 2);
 }

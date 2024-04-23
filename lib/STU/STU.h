@@ -1,7 +1,6 @@
 #ifndef __STU_H_
 #define __STU_H_
 
-#define MT int
 #define BITS 40
 
 class STU
@@ -13,7 +12,7 @@ private:
 
 public:
     STU(int pin);
-    byte readRHT(MT *rh, MT *t);
+    byte readRHT(byte *rh, byte *t);
     void begin();
 };
 
