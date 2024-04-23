@@ -33,10 +33,10 @@ GUVAS12SD uv(UV_PIN);
 LCD_I2C lcd(0x27, 16, 2);
 MOTOR motor = MOTOR(MOTOR_11, MOTOR_12, MOTOR_21, MOTOR_22);
 MQ135 sensorAer = MQ135(AER_PIN);
+ThreeWire wire(DAT_PIN, CLK_PIN, RST_PIN);
 RtcDS1302<ThreeWire> Rtc(wire);
 String btVal;
 STU stu = STU(STU_PIN);
-ThreeWire wire(DAT_PIN, CLK_PIN, RST_PIN);
 
 void afisareValoriCard(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
 void afisareValoriLCD(byte temperetura, byte umiditate, float co2, float presiune, float uvIndex);
@@ -249,7 +249,7 @@ void afisareValoriLCD(byte umiditate, byte temperatura, float co2, float presiun
   // mesaj
   lcd.setCursor(0, 1);
   procesareUV(uvIndex);
-  
+
   delay(PAUZA);
   lcd.clear();
 }
