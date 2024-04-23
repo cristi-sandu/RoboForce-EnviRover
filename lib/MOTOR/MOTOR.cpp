@@ -48,7 +48,6 @@ void MOTOR::stanga()
     digitalWrite(_m12, HIGH);
     digitalWrite(_m21, HIGH);
     digitalWrite(_m22, LOW);
-    delay(PAUZA_S);
 }
 
 void MOTOR::dreapta()
@@ -57,5 +56,4 @@ void MOTOR::dreapta()
     digitalWrite(_m12, LOW);
     digitalWrite(_m21, LOW);
     digitalWrite(_m22, HIGH);
-    delay(PAUZA_D);
 }

@@ -3,9 +3,6 @@
 
 // header pentru subansamblul MOTOR
 
-#define PAUZA_D 525
-#define PAUZA_S 550
-
 class MOTOR
 {
 private:
