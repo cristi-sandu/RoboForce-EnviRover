@@ -27,33 +27,33 @@
 #define SNZ_PRESIUNE 0x77
 #define PAUZA 5000
 
+BMP180I2C sensorPresiune = BMP180I2C(SNZ_PRESIUNE);
+File cardSd;
+GUVAS12SD uv(UV_PIN);
+LCD_I2C lcd(0x27, 16, 2);
 MOTOR motor = MOTOR(MOTOR_11, MOTOR_12, MOTOR_21, MOTOR_22);
 MQ135 sensorAer = MQ135(AER_PIN);
-BMP180I2C sensorPresiune = BMP180I2C(SNZ_PRESIUNE);
-STU stu = STU(STU_PIN);
-String btVal;
-LCD_I2C lcd(0x27, 16, 2);
-GUVAS12SD uv(UV_PIN);
-ThreeWire wire(DAT_PIN, CLK_PIN, RST_PIN);
 RtcDS1302<ThreeWire> Rtc(wire);
-File cardSd;
+String btVal;
+STU stu = STU(STU_PIN);
+ThreeWire wire(DAT_PIN, CLK_PIN, RST_PIN);
 
-void initPresiune();
-void afisareValoriSerial(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
+void afisareValoriCard(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
 void afisareValoriLCD(byte temperetura, byte umiditate, float co2, float presiune, float uvIndex);
+void afisareValoriSerial(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
+void functionare();
+void initPresiune();
 void printTime(RtcDateTime now);
 void printTimeLcd(RtcDateTime now);
-void afisareValoriCard(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
-void functionare();
 void procesareUV(float uvIndex);
 
 void setup()
 {
-  Serial.begin(BAUD_RATE);
-  Rtc.Begin();
-  motor.setup();
-  lcd.begin();
   lcd.backlight();
+  lcd.begin();
+  motor.setup();
+  Rtc.Begin();
+  Serial.begin(BAUD_RATE);
   stu.begin();
 
   if (!Serial || !SD.begin(CS_PIN) || !sensorPresiune.begin())
@@ -249,6 +249,7 @@ void afisareValoriLCD(byte umiditate, byte temperatura, float co2, float presiun
   // mesaj
   lcd.setCursor(0, 1);
   procesareUV(uvIndex);
+  
   delay(PAUZA);
   lcd.clear();
 }
