@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <SPI.h>
-#include <Wire.h>
 
 #include <BMP180I2C.h>
 #include <GUVA_S12SD.h>
@@ -26,7 +25,7 @@
 #define DAT_PIN 9
 #define CLK_PIN 10
 #define SNZ_PRESIUNE 0x77
-#define PAUZA 1000
+#define PAUZA 5000
 
 MOTOR motor = MOTOR(MOTOR_11, MOTOR_12, MOTOR_21, MOTOR_22);
 MQ135 sensorAer = MQ135(AER_PIN);
@@ -48,64 +47,28 @@ void printDateLcd(RtcDateTime now);
 void printTimeLcd(RtcDateTime now);
 void afisareValoriCard(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
 void functionare();
+void procesareUV(float uvIndex);
 
 void setup()
 {
   Serial.begin(BAUD_RATE);
-  while (!Serial)
-    ;
-  // Wire.begin();
   Rtc.Begin();
-
-  if (!SD.begin(CS_PIN))
-  {
-    while (true)
-      ;
-  }
-
-  if (!sensorPresiune.begin())
-  {
-    while (true)
-      ;
-  }
-
   motor.setup();
-  sensorPresiune.resetToDefaults();
-  sensorPresiune.setSamplingMode(BMP180MI::MODE_UHR);
   lcd.begin();
   lcd.backlight();
+
+  if (!Serial || !SD.begin(CS_PIN) || !sensorPresiune.begin())
+  {
+    while (true)
+      ;
+  }
+
+  sensorPresiune.resetToDefaults();
+  sensorPresiune.setSamplingMode(BMP180MI::MODE_UHR);
 }
 
 void loop()
 {
-  // teste();
-  // controlBluetooth();
-  // afisareValoriLCD(umiditate, temperatura, co2, presiune);
-
-  //   byte temperatura = 0;
-  //     byte umiditate = 0;
-
-  //     if (dht11.read(DHT_PIN, &temperatura, &umiditate, NULL))
-  //     {
-  //       Serial.println("Eroare");
-  //       return;
-  //     }
-
-  //     if (!sensorPresiune.measurePressure())
-  //     {
-  //       Serial.println("could not start perssure measurement, is a measurement already running?");
-  //       return;
-  //     }
-  //     do
-  //     {
-  //       delay(100);
-  //     } while (!sensorPresiune.hasValue());
-
-  //     float presiune = sensorPresiune.getPressure();
-  //     float co2 = sensorAer.getCorrectedPPM(temperatura, umiditate);
-  //     float mV = uv.read();
-  //     float uvIndex = uv.index(mV);
-  // afisareValoriSerial(umiditate, temperatura, co2, presiune, uvIndex);
   cardSd = SD.open("valori.txt", FILE_WRITE);
   cardSd.close();
 
@@ -143,7 +106,6 @@ void loop()
       {
         functionare();
       } while (++i < 3);
-
       break;
     }
     btVal = "";
@@ -152,8 +114,7 @@ void loop()
   {
     btVal = "";
   }
-
-  // delay(PAUZA);
+  delay(25);
 }
 
 void initPresiune()
@@ -167,6 +128,50 @@ void initPresiune()
   {
     delay(100);
   } while (!sensorPresiune.hasValue());
+}
+
+void procesareUV(float uvIndex)
+{
+  switch ((int)uvIndex)
+  {
+  case 0:
+    lcd.print("nu este soare");
+    break;
+  case 1:
+    lcd.print("scazut");
+    break;
+  case 2:
+    lcd.print("scazut");
+    break;
+  case 3:
+    lcd.print("mediu");
+    break;
+  case 4:
+    lcd.print("mediu");
+    break;
+  case 5:
+    lcd.print("mediu");
+    break;
+  case 6:
+    lcd.print("ridicat");
+    break;
+  case 7:
+    lcd.print("ridicat");
+    break;
+  case 8:
+    lcd.print("foarte ridicat");
+    break;
+  case 9:
+    lcd.print("foarte ridicat");
+    break;
+  case 10:
+    lcd.print("foarte ridicat");
+    break;
+
+  default:
+    lcd.print("extrem ridicat");
+    break;
+  }
 }
 
 void afisareValoriSerial(byte umiditate, byte temperatura, float co2, float presiune, float uvIndex)
@@ -189,28 +194,36 @@ void afisareValoriSerial(byte umiditate, byte temperatura, float co2, float pres
   Serial.print(presiune);
   Serial.println(" Pa");
   Serial.println();
-  delay(1000);
+  delay(PAUZA);
 }
 
 void afisareValoriLCD(byte umiditate, byte temperatura, float co2, float presiune, float uvIndex)
 {
+  // umiditate
   lcd.print("Umiditate : ");
   lcd.print(umiditate);
+  // tempratura
   lcd.setCursor(0, 1);
   lcd.print("Temperatura : ");
   lcd.print(temperatura);
-  delay(5000);
+  delay(PAUZA);
+  // calitatea aerului
   lcd.clear();
   lcd.print("Cal. aer : ");
   lcd.print(co2);
+  // presiune atmosferica
   lcd.setCursor(0, 1);
   lcd.print("Presiune : ");
   lcd.print(presiune);
-  delay(5000);
+  delay(PAUZA);
+  // index UV
   lcd.clear();
   lcd.print("Index UV : ");
   lcd.print(uvIndex);
-  delay(5000);
+  // mesaj
+  lcd.setCursor(0, 1);
+  procesareUV(uvIndex);
+  delay(PAUZA);
   lcd.clear();
 }
 
@@ -325,99 +338,10 @@ void functionare()
   lcd.setCursor(0, 1);
   printTimeLcd(now);
 
-  delay(5000);
+  delay(PAUZA);
   lcd.clear();
   lcd.setCursor(0, 0);
 
   afisareValoriLCD(umiditate, temperatura, co2, presiune, uvIndex);
-  delay(PAUZA);
+  delay(PAUZA / 2);
 }
-
-/*
-// BMP180_I2C.ino
-//
-// shows how to use the BMP180MI library with the sensor connected using I2C.
-//
-// Copyright (c) 2018 Gregor Christandl
-//
-// connect the BMP180 to the Arduino like this:
-// Arduino - BMC180
-// 5V ------ VCC
-// GND ----- GND
-// SDA ----- SDA
-// SCL ----- SCL
-
-#include <Arduino.h>
-#include <Wire.h>
-
-#include <BMP180I2C.h>
-
-#define I2C_ADDRESS 0x77
-
-//create an BMP180 object using the I2C interface
-BMP180I2C bmp180(I2C_ADDRESS);
-
-void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(9600);
-
-  //wait for serial connection to open (only necessary on some boards)
-  while (!Serial);
-
-  Wire.begin();
-
-  //begin() initializes the interface, checks the sensor ID and reads the calibration parameters.
-  if (!bmp180.begin())
-  {
-    Serial.println("begin() failed. check your BMP180 Interface and I2C Address.");
-    while (1);
-  }
-
-  //reset sensor to default parameters.
-  bmp180.resetToDefaults();
-
-  //enable ultra high resolution mode for pressure measurements
-  bmp180.setSamplingMode(BMP180MI::MODE_UHR);
-}
-
-void loop() {
-  // put your main code here, to run repeatedly:
-
-  delay(1000);
-
-  //start a temperature measurement
-  if (!bmp180.measureTemperature())
-  {
-    Serial.println("could not start temperature measurement, is a measurement already running?");
-    return;
-  }
-
-  //wait for the measurement to finish. proceed as soon as hasValue() returned true.
-  do
-  {
-    delay(100);
-  } while (!bmp180.hasValue());
-
-  Serial.print("Temperature: ");
-  Serial.print(bmp180.getTemperature());
-  Serial.println(" degC");
-
-  //start a pressure measurement. pressure measurements depend on temperature measurement, you should only start a pressure
-  //measurement immediately after a temperature measurement.
-  if (!bmp180.measurePressure())
-  {
-    Serial.println("could not start perssure measurement, is a measurement already running?");
-    return;
-  }
-
-  //wait for the measurement to finish. proceed as soon as hasValue() returned true.
-  do
-  {
-    delay(100);
-  } while (!bmp180.hasValue());
-
-  Serial.print("Pressure: ");
-  Serial.print(bmp180.getPressure());
-  Serial.println(" Pa");
-}
-*/
