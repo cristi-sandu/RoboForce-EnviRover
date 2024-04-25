@@ -101,12 +101,7 @@ void loop()
       motor.stop();
       break;
     case 'o':
-      int i = 0;
-
-      do
-      {
-        functionare();
-      } while (++i < 3);
+      functionare();
       break;
     }
     btVal = "";
@@ -122,8 +117,7 @@ void initPresiune()
 {
   if (!sensorPresiune.measurePressure())
   {
-    Serial.println("Eroare");
-    return;
+    lcd.print("     eroare");
   }
   do
   {
