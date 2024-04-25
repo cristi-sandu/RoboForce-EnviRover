@@ -39,11 +39,13 @@ String btVal;
 STU stu = STU(STU_PIN);
 
 void afisareValoriCard(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
+void afisareValoriCardExcel(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
 void afisareValoriLCD(byte temperetura, byte umiditate, float co2, float presiune, float uvIndex);
 void afisareValoriSerial(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
 void functionare();
 void initPresiune();
 void printTime(RtcDateTime now);
+void printTimeExcel(RtcDateTime now);
 void printTimeLcd(RtcDateTime now);
 void procesareUV(float uvIndex);
 
@@ -58,19 +60,19 @@ void setup()
 
   if (!Serial || !SD.begin(CS_PIN) || !sensorPresiune.begin())
   {
+    lcd.print("     eroare");
     while (true)
       ;
   }
 
   sensorPresiune.resetToDefaults();
   sensorPresiune.setSamplingMode(BMP180MI::MODE_UHR);
+  cardSd = SD.open("excel.txt", FILE_WRITE);
+  cardSd.close();
 }
 
 void loop()
 {
-  cardSd = SD.open("valori.txt", FILE_WRITE);
-  cardSd.close();
-
   while (Serial.available() > 0)
   {
     btVal = btVal + ((char)(Serial.read()));
@@ -273,6 +275,23 @@ void printTime(RtcDateTime now)
   cardSd.print(" ");
 }
 
+void printTimeExcel(RtcDateTime now)
+{
+  cardSd.print(now.Day());
+  cardSd.print("-");
+  cardSd.print(now.Month());
+  cardSd.print("-");
+  cardSd.print(now.Year());
+  cardSd.print(" ");
+
+  cardSd.print(now.Hour());
+  cardSd.print(":");
+  cardSd.print(now.Minute());
+  cardSd.print(":");
+  cardSd.print(now.Second());
+  cardSd.print(" ");
+}
+
 void afisareValoriCard(byte umiditate, byte temperatura, float co2, float presiune, float uvIndex)
 {
   // umiditate
@@ -303,6 +322,29 @@ void afisareValoriCard(byte umiditate, byte temperatura, float co2, float presiu
   cardSd.println();
 }
 
+void afisareValoriCardExcel(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex)
+{
+  // umiditate
+  cardSd.print(umiditate);
+  cardSd.print(" ");
+
+  // temperatura
+  cardSd.print(temperatura);
+  cardSd.print(" ");
+
+  // co2
+  cardSd.print(co2);
+  cardSd.print(" ");
+
+  // presiune
+  cardSd.print(presiune);
+  cardSd.print(" ");
+
+  // uv
+  cardSd.print(uvIndex);
+  cardSd.println();
+}
+
 void functionare()
 {
   byte temperatura = 0;
@@ -312,27 +354,32 @@ void functionare()
   status = stu.readRHT(&umiditate, &temperatura);
   if (status)
   {
-    Serial.print("Eroare : ");
-    Serial.println(status);
+    lcd.print("     eroare");
   }
 
   initPresiune();
 
-  float presiune = sensorPresiune.getPressure();
+  float presiune = sensorPresiune.getPressure() / 100000;
   float co2 = sensorAer.getCorrectedPPM(temperatura, umiditate);
   float mV = uv.read();
   float uvIndex = uv.index(mV);
 
-  cardSd = SD.open("valori.txt", FILE_WRITE);
+  cardSd = SD.open("excel.txt", FILE_WRITE);
   RtcDateTime now = Rtc.GetDateTime();
 
   if (cardSd)
   {
+    /*
     // data si ora
     printTime(now);
 
     afisareValoriCard(umiditate, temperatura, co2, presiune, uvIndex);
     cardSd.println();
+    */
+
+    // afisare pentru crearea de grafice in excel
+    printTimeExcel(now);
+    afisareValoriCardExcel(temperatura, umiditate, co2, presiune, uvIndex);
 
     cardSd.close();
   }
