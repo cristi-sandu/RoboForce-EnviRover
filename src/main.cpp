@@ -42,12 +42,14 @@ void afisareValoriCard(byte temperatura, byte umiditate, float co2, float presiu
 void afisareValoriCardExcel(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
 void afisareValoriLCD(byte temperetura, byte umiditate, float co2, float presiune, float uvIndex);
 void afisareValoriSerial(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
+void esteCf(int numar);
 void functionare();
 void initPresiune();
 void printTime(RtcDateTime now);
 void printTimeExcel(RtcDateTime now);
 void printTimeLcd(RtcDateTime now);
 void procesareUV(float uvIndex);
+void timer(int ore, int minute, int secunde);
 
 void setup()
 {
@@ -69,6 +71,10 @@ void setup()
   sensorPresiune.setSamplingMode(BMP180MI::MODE_UHR);
   cardSd = SD.open("excel.txt", FILE_WRITE);
   cardSd.close();
+
+  // actualizare ora
+  // RtcDateTime currentTime = RtcDateTime(__DATE__, __TIME__);
+  // Rtc.SetDateTime(currentTime);
 }
 
 void loop()
@@ -78,6 +84,7 @@ void loop()
     btVal = btVal + ((char)(Serial.read()));
     delay(2);
   }
+
   if (0 < String(btVal).length() && 2 >= String(btVal).length())
   {
     Serial.println(String(btVal).length());
@@ -102,6 +109,10 @@ void loop()
       break;
     case 'o':
       functionare();
+      break;
+    case 'c':
+      lcd.print(" calibrare snz.");
+      timer(0, 10, 0);
       break;
     }
     btVal = "";
@@ -169,6 +180,63 @@ void procesareUV(float uvIndex)
   }
 }
 
+void esteCf(int numar)
+{
+  if (numar < 10)
+  {
+    lcd.print(0);
+  }
+}
+
+void timer(int ore, int minute, int secunde)
+{
+  lcd.setCursor(4, 1);
+  esteCf(ore);
+  lcd.print(ore);
+  lcd.print(":");
+  esteCf(minute);
+  lcd.print(minute);
+  lcd.print(":");
+  esteCf(secunde);
+  lcd.print(secunde);
+  delay(1000);
+
+  if (!minute && ore)
+  {
+    ore--;
+    minute = 60;
+  }
+  if (!secunde && minute)
+  {
+    minute--;
+    secunde = 59;
+  }
+
+  for (int i = ore; i >= 0; i--)
+  {
+    lcd.setCursor(4, 1);
+    esteCf(i);
+    lcd.print(i);
+    lcd.print(":");
+
+    for (int j = minute; j >= 0; j--)
+    {
+      lcd.setCursor(7, 1);
+      esteCf(j);
+      lcd.print(j);
+      lcd.print(":");
+
+      for (int k = secunde; k >= 0; k--)
+      {
+        lcd.setCursor(10, 1);
+        esteCf(k);
+        lcd.print(k);
+        delay(1000);
+      }
+    }
+  }
+}
+
 void afisareValoriSerial(byte umiditate, byte temperatura, float co2, float presiune, float uvIndex)
 {
   Serial.println("Start masuratoare");
@@ -196,20 +264,25 @@ void afisareValoriSerial(byte umiditate, byte temperatura, float co2, float pres
 void printTimeLcd(RtcDateTime now)
 {
   lcd.clear();
-  lcd.setCursor(0, 0);
   lcd.print("data: ");
+  esteCf(now.Day());
   lcd.print(now.Day());
   lcd.print("/");
+  esteCf(now.Month());
   lcd.print(now.Month());
   lcd.print("/");
+  esteCf(now.Year());
   lcd.print(now.Year());
 
   lcd.setCursor(0, 1);
-  lcd.print("ora: ");
+  lcd.print(" ora: ");
+  esteCf(now.Hour());
   lcd.print(now.Hour());
   lcd.print(":");
+  esteCf(now.Minute());
   lcd.print(now.Minute());
   lcd.print(":");
+  esteCf(now.Second());
   lcd.print(now.Second());
 
   delay(PAUZA);
@@ -363,14 +436,6 @@ void functionare()
 
   if (cardSd)
   {
-    /*
-    // data si ora
-    printTime(now);
-
-    afisareValoriCard(umiditate, temperatura, co2, presiune, uvIndex);
-    cardSd.println();
-    */
-
     // afisare pentru crearea de grafice in excel
     printTimeExcel(now);
     afisareValoriCardExcel(temperatura, umiditate, co2, presiune, uvIndex);
@@ -380,5 +445,6 @@ void functionare()
 
   printTimeLcd(now);
   afisareValoriLCD(umiditate, temperatura, co2, presiune, uvIndex);
+
   delay(PAUZA / 2);
 }
