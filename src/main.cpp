@@ -141,7 +141,7 @@ void procesareUV(float uvIndex)
   switch ((int)uvIndex)
   {
   case 0:
-    lcd.print("nu este soare");
+    lcd.print("foarte scazut");
     break;
   case 1:
     lcd.print("scazut");
