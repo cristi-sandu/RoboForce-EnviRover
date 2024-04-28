@@ -39,16 +39,11 @@ RtcDS1302<ThreeWire> Rtc(wire);
 String btVal;
 STU stu = STU(STU_PIN);
 
-void afisareValoriCard(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
-void afisareValoriCardExcel(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
-void afisareValoriLCD(byte temperetura, byte umiditate, float co2, float presiune, float uvIndex);
-void afisareValoriSerial(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
+void afisareTimp(RtcDateTime now, char optiune);
+void afisareValori(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex, char optiune);
 void esteCf(int numar);
 void functionare();
 void initPresiune();
-void printTime(RtcDateTime now);
-void printTimeExcel(RtcDateTime now);
-void printTimeLcd(RtcDateTime now);
 void procesareUV(float uvIndex);
 void timer(int ore, int minute, int secunde);
 
@@ -64,6 +59,7 @@ void setup()
 
   if (!Serial || !SD.begin(CS_PIN) || !sensorPresiune.begin())
   {
+    lcd.clear();
     lcd.setCursor(5, 0);
     lcd.print("eroare");
 
@@ -152,6 +148,7 @@ void initPresiune()
 {
   if (!sensorPresiune.measurePressure())
   {
+    lcd.clear();
     lcd.setCursor(5, 0);
     lcd.print("eroare");
   }
@@ -262,179 +259,179 @@ void timer(int ore, int minute, int secunde)
   }
 }
 
-void afisareValoriSerial(byte umiditate, byte temperatura, float co2, float presiune, float uvIndex)
+void afisareTimp(RtcDateTime now, char optiune)
 {
-  Serial.println("Start masuratoare");
-  // umiditate
-  Serial.print("Umiditate: ");
-  Serial.print(umiditate);
-  Serial.println(" %");
-  // temperatura
-  Serial.print("Temperatura: ");
-  Serial.print(temperatura);
-  Serial.println(" C");
-  // calitate aer
-  Serial.print("Calitate Aer: ");
-  Serial.print(co2);
-  Serial.println(" ppm");
-  // presiune
-  Serial.print("Presiune: ");
-  Serial.print(presiune);
-  Serial.println(" Pa");
-  Serial.println();
+  switch (optiune)
+  {
+  case 'c':
+    cardSd.print("data : ");
+    cardSd.print(now.Day());
+    cardSd.print("/");
+    cardSd.print(now.Month());
+    cardSd.print("/");
+    cardSd.println(now.Year());
+    cardSd.print(" ");
 
-  delay(PAUZA);
+    cardSd.print("ora : ");
+    cardSd.print(now.Hour());
+    cardSd.print(":");
+    cardSd.print(now.Minute());
+    cardSd.print(":");
+    cardSd.println(now.Second());
+    cardSd.print(" ");
+    break;
+  case 'e':
+    cardSd.print(now.Day());
+    cardSd.print("-");
+    cardSd.print(now.Month());
+    cardSd.print("-");
+    cardSd.print(now.Year());
+    cardSd.print(" ");
+
+    cardSd.print(now.Hour());
+    cardSd.print(":");
+    cardSd.print(now.Minute());
+    cardSd.print(":");
+    cardSd.print(now.Second());
+    cardSd.print(" ");
+    break;
+  case 'l':
+    lcd.clear();
+    lcd.print("data: ");
+    esteCf(now.Day());
+    lcd.print(now.Day());
+    lcd.print("/");
+    esteCf(now.Month());
+    lcd.print(now.Month());
+    lcd.print("/");
+    esteCf(now.Year());
+    lcd.print(now.Year());
+
+    lcd.setCursor(0, 1);
+    lcd.print(" ora: ");
+    esteCf(now.Hour());
+    lcd.print(now.Hour());
+    lcd.print(":");
+    esteCf(now.Minute());
+    lcd.print(now.Minute());
+    lcd.print(":");
+    esteCf(now.Second());
+    lcd.print(now.Second());
+
+    delay(PAUZA);
+    lcd.clear();
+    break;
+  }
 }
 
-void printTimeLcd(RtcDateTime now)
+void afisareValori(byte umiditate, byte temperatura, float co2, float presiune, float uvIndex, char optiune)
 {
-  lcd.clear();
-  lcd.print("data: ");
-  esteCf(now.Day());
-  lcd.print(now.Day());
-  lcd.print("/");
-  esteCf(now.Month());
-  lcd.print(now.Month());
-  lcd.print("/");
-  esteCf(now.Year());
-  lcd.print(now.Year());
+  switch (optiune)
+  {
+  case 'c':
+    // umiditate
+    cardSd.print("umiditate : ");
+    cardSd.print(umiditate);
+    cardSd.print(" ");
 
-  lcd.setCursor(0, 1);
-  lcd.print(" ora: ");
-  esteCf(now.Hour());
-  lcd.print(now.Hour());
-  lcd.print(":");
-  esteCf(now.Minute());
-  lcd.print(now.Minute());
-  lcd.print(":");
-  esteCf(now.Second());
-  lcd.print(now.Second());
+    // temperatura
+    cardSd.print("temperatura : ");
+    cardSd.print(temperatura);
+    cardSd.print(" ");
 
-  delay(PAUZA);
-  lcd.clear();
-}
+    // co2
+    cardSd.print("co2 : ");
+    cardSd.print(co2);
+    cardSd.print(" ");
 
-void afisareValoriLCD(byte umiditate, byte temperatura, float co2, float presiune, float uvIndex)
-{
-  // umiditate
-  lcd.clear();
-  lcd.print("umiditate : ");
-  lcd.print(umiditate);
-  // tempratura
-  lcd.setCursor(0, 1);
-  lcd.print("temperatura : ");
-  lcd.print(temperatura);
-  delay(PAUZA);
+    // presiune
+    cardSd.print("presiune : ");
+    cardSd.print(presiune);
+    cardSd.print(" ");
 
-  // calitatea aerului
-  lcd.clear();
-  lcd.print("cal. aer : ");
-  lcd.print(co2);
-  // presiune atmosferica
-  lcd.setCursor(0, 1);
-  lcd.print("presiune : ");
-  lcd.print(presiune);
-  delay(PAUZA);
+    // uv
+    cardSd.print("uv : ");
+    cardSd.print(uvIndex);
+    cardSd.print(" ");
 
-  // index UV
-  lcd.clear();
-  lcd.print("index UV : ");
-  lcd.print(uvIndex);
-  // mesaj
-  lcd.setCursor(0, 1);
-  procesareUV(uvIndex);
+    cardSd.println();
+    break;
+  case 'e':
+    // umiditate
+    cardSd.print(umiditate);
+    cardSd.print(" ");
 
-  delay(PAUZA);
-  lcd.clear();
-}
+    // temperatura
+    cardSd.print(temperatura);
+    cardSd.print(" ");
 
-void printTime(RtcDateTime now)
-{
-  cardSd.print("data : ");
-  cardSd.print(now.Day());
-  cardSd.print("/");
-  cardSd.print(now.Month());
-  cardSd.print("/");
-  cardSd.println(now.Year());
-  cardSd.print(" ");
+    // co2
+    cardSd.print(co2);
+    cardSd.print(" ");
 
-  cardSd.print("ora : ");
-  cardSd.print(now.Hour());
-  cardSd.print(":");
-  cardSd.print(now.Minute());
-  cardSd.print(":");
-  cardSd.println(now.Second());
-  cardSd.print(" ");
-}
+    // presiune
+    cardSd.print(presiune);
+    cardSd.print(" ");
 
-void printTimeExcel(RtcDateTime now)
-{
-  cardSd.print(now.Day());
-  cardSd.print("-");
-  cardSd.print(now.Month());
-  cardSd.print("-");
-  cardSd.print(now.Year());
-  cardSd.print(" ");
+    // uv
+    cardSd.print(uvIndex);
+    cardSd.println();
+    break;
+  case 'l':
+    // umiditate
+    lcd.clear();
+    lcd.print("umiditate : ");
+    lcd.print(umiditate);
+    // tempratura
+    lcd.setCursor(0, 1);
+    lcd.print("temperatura : ");
+    lcd.print(temperatura);
+    delay(PAUZA);
 
-  cardSd.print(now.Hour());
-  cardSd.print(":");
-  cardSd.print(now.Minute());
-  cardSd.print(":");
-  cardSd.print(now.Second());
-  cardSd.print(" ");
-}
+    // calitatea aerului
+    lcd.clear();
+    lcd.print("cal. aer : ");
+    lcd.print(co2);
+    // presiune atmosferica
+    lcd.setCursor(0, 1);
+    lcd.print("presiune : ");
+    lcd.print(presiune);
+    delay(PAUZA);
 
-void afisareValoriCard(byte umiditate, byte temperatura, float co2, float presiune, float uvIndex)
-{
-  // umiditate
-  cardSd.print("umiditate : ");
-  cardSd.print(umiditate);
-  cardSd.print(" ");
+    // index UV
+    lcd.clear();
+    lcd.print("index UV : ");
+    lcd.print(uvIndex);
+    // mesaj
+    lcd.setCursor(0, 1);
+    procesareUV(uvIndex);
 
-  // temperatura
-  cardSd.print("temperatura : ");
-  cardSd.print(temperatura);
-  cardSd.print(" ");
+    delay(PAUZA);
+    lcd.clear();
+    break;
+  case 's':
+    Serial.println("Start masuratoare");
+    // umiditate
+    Serial.print("Umiditate: ");
+    Serial.print(umiditate);
+    Serial.println(" %");
+    // temperatura
+    Serial.print("Temperatura: ");
+    Serial.print(temperatura);
+    Serial.println(" C");
+    // calitate aer
+    Serial.print("Calitate Aer: ");
+    Serial.print(co2);
+    Serial.println(" ppm");
+    // presiune
+    Serial.print("Presiune: ");
+    Serial.print(presiune);
+    Serial.println(" Pa");
+    Serial.println();
 
-  // co2
-  cardSd.print("co2 : ");
-  cardSd.print(co2);
-  cardSd.print(" ");
-
-  // presiune
-  cardSd.print("presiune : ");
-  cardSd.print(presiune);
-  cardSd.print(" ");
-
-  // uv
-  cardSd.print("uv : ");
-  cardSd.print(uvIndex);
-  cardSd.print(" ");
-
-  cardSd.println();
-}
-
-void afisareValoriCardExcel(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex)
-{
-  // umiditate
-  cardSd.print(umiditate);
-  cardSd.print(" ");
-
-  // temperatura
-  cardSd.print(temperatura);
-  cardSd.print(" ");
-
-  // co2
-  cardSd.print(co2);
-  cardSd.print(" ");
-
-  // presiune
-  cardSd.print(presiune);
-  cardSd.print(" ");
-
-  // uv
-  cardSd.print(uvIndex);
-  cardSd.println();
+    delay(PAUZA);
+    break;
+  }
 }
 
 void functionare()
@@ -446,6 +443,7 @@ void functionare()
   status = stu.readRHT(&umiditate, &temperatura);
   if (status)
   {
+    lcd.clear();
     lcd.setCursor(5, 0);
     lcd.print("eroare");
   }
@@ -463,14 +461,14 @@ void functionare()
   if (cardSd)
   {
     // afisare pentru crearea de grafice in excel
-    printTimeExcel(now);
-    afisareValoriCardExcel(temperatura, umiditate, co2, presiune, uvIndex);
+    afisareTimp(now, 'e');
+    afisareValori(umiditate, temperatura, co2, presiune, uvIndex, 'e');
 
     cardSd.close();
   }
 
-  printTimeLcd(now);
-  afisareValoriLCD(umiditate, temperatura, co2, presiune, uvIndex);
+  afisareTimp(now, 'l');
+  afisareValori(umiditate, temperatura, co2, presiune, uvIndex, 'l');
 
   delay(PAUZA / 2);
 }
