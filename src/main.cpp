@@ -38,6 +38,8 @@ RtcDS1302<ThreeWire> Rtc(wire);
 String btVal;
 STU stu = STU(STU_PIN);
 
+bool deconectat = true;
+
 void afisareValoriCard(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
 void afisareValoriCardExcel(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
 void afisareValoriLCD(byte temperetura, byte umiditate, float co2, float presiune, float uvIndex);
@@ -53,8 +55,8 @@ void timer(int ore, int minute, int secunde);
 
 void setup()
 {
-  lcd.backlight();
   lcd.begin();
+  lcd.backlight();
   motor.setup();
   Rtc.Begin();
   Serial.begin(BAUD_RATE);
@@ -62,9 +64,17 @@ void setup()
 
   if (!Serial || !SD.begin(CS_PIN) || !sensorPresiune.begin())
   {
-    lcd.print("     eroare");
+    lcd.setCursor(5, 0);
+    lcd.print("eroare");
+
     while (true)
-      ;
+    {
+      if (Serial && SD.begin(CS_PIN) && sensorPresiune.begin())
+      {
+        break;
+      }
+      delay(100);
+    }
   }
 
   sensorPresiune.resetToDefaults();
@@ -79,8 +89,20 @@ void setup()
 
 void loop()
 {
+  if (Serial.available() <= 0 && deconectat)
+  {
+    deconectat = true;
+    lcd.clear();
+    lcd.setCursor(3, 0);
+    lcd.print("deconectat");
+  }
+
   while (Serial.available() > 0)
   {
+    deconectat = false;
+    lcd.clear();
+    lcd.setCursor(4, 0);
+    lcd.print("conectat");
     btVal = btVal + ((char)(Serial.read()));
     delay(2);
   }
@@ -111,6 +133,7 @@ void loop()
       functionare();
       break;
     case 'c':
+      lcd.clear();
       lcd.print(" calibrare snz.");
       timer(0, 10, 0);
       break;
@@ -128,7 +151,8 @@ void initPresiune()
 {
   if (!sensorPresiune.measurePressure())
   {
-    lcd.print("     eroare");
+    lcd.setCursor(5, 0);
+    lcd.print("eroare");
   }
   do
   {
@@ -421,7 +445,8 @@ void functionare()
   status = stu.readRHT(&umiditate, &temperatura);
   if (status)
   {
-    lcd.print("     eroare");
+    lcd.setCursor(5, 0);
+    lcd.print("eroare");
   }
 
   initPresiune();
