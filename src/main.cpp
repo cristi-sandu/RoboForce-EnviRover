@@ -15,6 +15,7 @@
 #define BAUD_RATE 9600
 #define AER_PIN A0
 #define UV_PIN A1
+#define BT_STATUS_PIN A2
 #define CS_PIN 2
 #define STU_PIN 3
 #define MOTOR_11 4
@@ -38,8 +39,6 @@ RtcDS1302<ThreeWire> Rtc(wire);
 String btVal;
 STU stu = STU(STU_PIN);
 
-bool deconectat = true;
-
 void afisareValoriCard(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
 void afisareValoriCardExcel(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex);
 void afisareValoriLCD(byte temperetura, byte umiditate, float co2, float presiune, float uvIndex);
@@ -61,6 +60,7 @@ void setup()
   Rtc.Begin();
   Serial.begin(BAUD_RATE);
   stu.begin();
+  pinMode(BT_STATUS_PIN, INPUT);
 
   if (!Serial || !SD.begin(CS_PIN) || !sensorPresiune.begin())
   {
@@ -89,20 +89,21 @@ void setup()
 
 void loop()
 {
-  if (Serial.available() <= 0 && deconectat)
+  if (digitalRead(BT_STATUS_PIN) == LOW)
   {
-    deconectat = true;
     lcd.clear();
     lcd.setCursor(3, 0);
     lcd.print("deconectat");
   }
-
-  while (Serial.available() > 0)
+  else
   {
-    deconectat = false;
     lcd.clear();
     lcd.setCursor(4, 0);
     lcd.print("conectat");
+  }
+
+  while (Serial.available() > 0)
+  {
     btVal = btVal + ((char)(Serial.read()));
     delay(2);
   }
