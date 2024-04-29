@@ -25,13 +25,16 @@
 #define RST_PIN 8
 #define DAT_PIN 9
 #define CLK_PIN 10
+#define LCD 0x27
+#define LINII_LCD 2
+#define COLOANE_LCD 16
 #define SNZ_PRESIUNE 0x77
 #define PAUZA 5000
 
 BMP180I2C sensorPresiune = BMP180I2C(SNZ_PRESIUNE);
 File cardSd;
 GUVAS12SD uv(UV_PIN);
-LCD_I2C lcd(0x27, 16, 2);
+LCD_I2C lcd(LCD, COLOANE_LCD, LINII_LCD);
 MOTOR motor = MOTOR(MOTOR_11, MOTOR_12, MOTOR_21, MOTOR_22);
 MQ135 sensorAer = MQ135(AER_PIN);
 ThreeWire wire(DAT_PIN, CLK_PIN, RST_PIN);
@@ -88,13 +91,17 @@ void loop()
   if (digitalRead(BT_STATUS_PIN) == LOW)
   {
     lcd.clear();
-    lcd.setCursor(3, 0);
+    lcd.setCursor(4, 0);
+    lcd.print("stare bt");
+    lcd.setCursor(3, 1);
     lcd.print("deconectat");
   }
   else
   {
     lcd.clear();
     lcd.setCursor(4, 0);
+    lcd.print("stare bt");
+    lcd.setCursor(4, 1);
     lcd.print("conectat");
   }
 
@@ -131,7 +138,8 @@ void loop()
       break;
     case 'c':
       lcd.clear();
-      lcd.print(" calibrare snz.");
+      lcd.setCursor(1, 0);
+      lcd.print("calibrare snz.");
       timer(0, 10, 0);
       break;
     }
@@ -163,40 +171,52 @@ void procesareUV(float uvIndex)
   switch ((int)uvIndex)
   {
   case 0:
-    lcd.print("foarte scazut");
+    lcd.setCursor(0, 1);
+    lcd.print("extrem de scazut");
     break;
   case 1:
+    lcd.setCursor(5, 1);
     lcd.print("scazut");
     break;
   case 2:
+    lcd.setCursor(5, 1);
     lcd.print("scazut");
     break;
   case 3:
+    lcd.setCursor(5, 1);
     lcd.print("mediu");
     break;
   case 4:
+    lcd.setCursor(5, 1);
     lcd.print("mediu");
     break;
   case 5:
+    lcd.setCursor(5, 1);
     lcd.print("mediu");
     break;
   case 6:
+    lcd.setCursor(4, 1);
     lcd.print("ridicat");
     break;
   case 7:
+    lcd.setCursor(4, 1);
     lcd.print("ridicat");
     break;
   case 8:
+    lcd.setCursor(1, 1);
     lcd.print("foarte ridicat");
     break;
   case 9:
+    lcd.setCursor(1, 1);
     lcd.print("foarte ridicat");
     break;
   case 10:
+    lcd.setCursor(1, 1);
     lcd.print("foarte ridicat");
     break;
 
   default:
+    lcd.setCursor(1, 1);
     lcd.print("extrem ridicat");
     break;
   }
@@ -380,30 +400,40 @@ void afisareValori(byte umiditate, byte temperatura, float co2, float presiune, 
   case 'l':
     // umiditate
     lcd.clear();
-    lcd.print("umiditate : ");
+    lcd.setCursor(3, 0);
+    lcd.print("umid : ");
+    esteCf(umiditate);
     lcd.print(umiditate);
+    lcd.print("%");
     // tempratura
-    lcd.setCursor(0, 1);
-    lcd.print("temperatura : ");
+    lcd.setCursor(3, 1);
+    lcd.print("temp : ");
+    esteCf(temperatura);
     lcd.print(temperatura);
+    lcd.print("C");
     delay(PAUZA);
 
     // calitatea aerului
     lcd.clear();
-    lcd.print("cal. aer : ");
+    lcd.setCursor(1, 0);
+    esteCf(co2);
+    lcd.print("CO2 : ");
     lcd.print(co2);
+    lcd.print("ppm");
     // presiune atmosferica
     lcd.setCursor(0, 1);
-    lcd.print("presiune : ");
+    lcd.print("p : ");
+    esteCf(presiune);
     lcd.print(presiune);
+    lcd.print("*10^3Pa");
     delay(PAUZA);
 
     // index UV
     lcd.clear();
+    lcd.setCursor(2, 0);
     lcd.print("index UV : ");
-    lcd.print(uvIndex);
+    lcd.print((int)uvIndex);
     // mesaj
-    lcd.setCursor(0, 1);
     procesareUV(uvIndex);
 
     delay(PAUZA);
@@ -436,6 +466,12 @@ void afisareValori(byte umiditate, byte temperatura, float co2, float presiune, 
 
 void functionare()
 {
+  lcd.clear();
+  lcd.setCursor(2, 0);
+  lcd.print("inregistrare");
+  lcd.setCursor(5, 1);
+  lcd.print("valori");
+
   byte temperatura = 0;
   byte umiditate = 0;
   byte status = 0;
@@ -450,16 +486,24 @@ void functionare()
 
   initPresiune();
 
-  float presiune = sensorPresiune.getPressure() / 100000;
+  float presiune = sensorPresiune.getPressure() / 1000;
   float co2 = sensorAer.getCorrectedPPM(temperatura, umiditate);
   float mV = uv.read();
   float uvIndex = uv.index(mV);
+
+  delay(PAUZA / 2);
 
   cardSd = SD.open("excel.txt", FILE_WRITE);
   RtcDateTime now = Rtc.GetDateTime();
 
   if (cardSd)
   {
+    lcd.clear();
+    lcd.setCursor(3, 0);
+    lcd.print("scriere pe");
+    lcd.setCursor(6, 1);
+    lcd.print("card");
+
     // afisare pentru crearea de grafice in excel
     afisareTimp(now, 'e');
     afisareValori(umiditate, temperatura, co2, presiune, uvIndex, 'e');
@@ -467,8 +511,8 @@ void functionare()
     cardSd.close();
   }
 
+  delay(PAUZA / 2);
+
   afisareTimp(now, 'l');
   afisareValori(umiditate, temperatura, co2, presiune, uvIndex, 'l');
-
-  delay(PAUZA / 2);
 }
