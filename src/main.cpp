@@ -175,41 +175,23 @@ void procesareUV(float uvIndex)
     lcd.print("extrem de scazut");
     break;
   case 1:
-    lcd.setCursor(5, 1);
-    lcd.print("scazut");
-    break;
   case 2:
     lcd.setCursor(5, 1);
     lcd.print("scazut");
     break;
   case 3:
-    lcd.setCursor(5, 1);
-    lcd.print("mediu");
-    break;
   case 4:
-    lcd.setCursor(5, 1);
-    lcd.print("mediu");
-    break;
   case 5:
     lcd.setCursor(5, 1);
     lcd.print("mediu");
     break;
   case 6:
-    lcd.setCursor(4, 1);
-    lcd.print("ridicat");
-    break;
   case 7:
     lcd.setCursor(4, 1);
     lcd.print("ridicat");
     break;
   case 8:
-    lcd.setCursor(1, 1);
-    lcd.print("foarte ridicat");
-    break;
   case 9:
-    lcd.setCursor(1, 1);
-    lcd.print("foarte ridicat");
-    break;
   case 10:
     lcd.setCursor(1, 1);
     lcd.print("foarte ridicat");
