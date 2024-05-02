@@ -44,6 +44,7 @@ STU stu = STU(STU_PIN);
 
 void afisareTimp(RtcDateTime now, char optiune);
 void afisareValori(byte temperatura, byte umiditate, float co2, float presiune, float uvIndex, char optiune);
+void checkBluetooth(bool status);
 void esteCf(int numar);
 void functionare();
 void initPresiune();
@@ -88,22 +89,7 @@ void setup()
 
 void loop()
 {
-  if (digitalRead(BT_STATUS_PIN) == LOW)
-  {
-    lcd.clear();
-    lcd.setCursor(4, 0);
-    lcd.print("stare bt");
-    lcd.setCursor(3, 1);
-    lcd.print("deconectat");
-  }
-  else
-  {
-    lcd.clear();
-    lcd.setCursor(4, 0);
-    lcd.print("stare bt");
-    lcd.setCursor(4, 1);
-    lcd.print("conectat");
-  }
+  checkBluetooth(digitalRead(BT_STATUS_PIN));
 
   while (Serial.available() > 0)
   {
@@ -150,6 +136,26 @@ void loop()
     btVal = "";
   }
   delay(25);
+}
+
+void checkBluetooth(bool status)
+{
+  if (status == false)
+  {
+    lcd.clear();
+    lcd.setCursor(4, 0);
+    lcd.print("stare bt");
+    lcd.setCursor(3, 1);
+    lcd.print("deconectat");
+  }
+  else
+  {
+    lcd.clear();
+    lcd.setCursor(4, 0);
+    lcd.print("stare bt");
+    lcd.setCursor(4, 1);
+    lcd.print("conectat");
+  }
 }
 
 void initPresiune()
